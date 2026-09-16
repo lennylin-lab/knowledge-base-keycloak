@@ -1,0 +1,38 @@
+# Dev-only Keycloak for the knowledge-base stack.
+#
+# Replaces the temporary `keycloak` service in knowledge-base-server/docker-compose.yml.
+# Run alongside server compose (server should omit its keycloak service once migrated).
+#
+#   docker compose up -d --build
+#
+# Admin console: http://localhost:8180
+
+services:
+  keycloak:
+    container_name: knowledge-base-keycloak
+    build: .
+    image: kb-keycloak:26.0-dev
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: "8180"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - keycloakdata:/opt/keycloak/data
+      - ./themes:/opt/keycloak/themes:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+
+volumes:
+  keycloakdata:
